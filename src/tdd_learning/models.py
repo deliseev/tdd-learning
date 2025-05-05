@@ -14,7 +14,13 @@ class Batch:
         self.reference = ref
         self.sku = sku
         self.eta = eta
-        self.available_quantity = qty
+        self._purchased_quantity = qty
+        self._allocations = set[OrderLine]()
 
     def allocate(self, line: OrderLine):
-        self.available_quantity -= line.qty
+        if line.sku == self.sku and line.qty <= self.available_quantity:
+            self._allocations.add(line)
+
+    @property
+    def available_quantity(self) -> int:
+        return self._purchased_quantity - sum(line.qty for line in self._allocations)
