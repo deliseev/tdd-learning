@@ -1,6 +1,8 @@
 import datetime as dt
 
-from tdd_learning.models import Batch, OrderLine, allocate
+import pytest
+
+from tdd_learning.models import Batch, OrderLine, OutOfStock, allocate
 
 # filepath: src/tdd_learning/test_models.py
 
@@ -80,21 +82,6 @@ def test_allocate_prefers_earlier_batches():
     assert batch2.available_quantity == 20
 
 
-def test_allocate_returns_none_when_no_batches_can_allocate():
-    batch1 = Batch("batch-001", "SMALL-TABLE", qty=10, eta=dt.date.today())
-    batch2 = Batch(
-        "batch-002", "SMALL-TABLE", qty=20, eta=dt.date.today() + dt.timedelta(days=1)
-    )
-    batches = [batch1, batch2]
-    line = OrderLine("order-ref", "LARGE-TABLE", 5)  # SKU does not match
-
-    result = allocate(line, batches)
-
-    assert result is None
-    assert batch1.available_quantity == 10
-    assert batch2.available_quantity == 20
-
-
 def test_allocate_reduces_available_quantity_in_allocated_batch():
     batch1 = Batch("batch-001", "SMALL-TABLE", qty=10, eta=dt.date.today())
     batch2 = Batch(
@@ -107,3 +94,18 @@ def test_allocate_reduces_available_quantity_in_allocated_batch():
 
     assert batch1.available_quantity == 5
     assert batch2.available_quantity == 20
+
+
+def test_allocate_raises_value_error_when_no_batches_can_allocate():
+    batch1 = Batch("batch-001", "SMALL-TABLE", qty=10, eta=dt.date.today())
+    batch2 = Batch(
+        "batch-002", "SMALL-TABLE", qty=20, eta=dt.date.today() + dt.timedelta(days=1)
+    )
+    batches = [batch1, batch2]
+    line = OrderLine("order-ref", "LARGE-TABLE", 5)  # SKU does not match
+
+    with pytest.raises(
+        OutOfStock,
+        match="No batch available to allocate the order line with SKU LARGE-TABLE.",
+    ):
+        allocate(line, batches)

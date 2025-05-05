@@ -49,7 +49,13 @@ class Batch:
             self._allocations.remove(line)
 
 
-def allocate(line: OrderLine, batches: list[Batch]) -> str | None:
+class OutOfStock(Exception):
+    """Exception raised when no batch is available to allocate an order line."""
+
+    pass
+
+
+def allocate(line: OrderLine, batches: list[Batch]) -> str:
     """Allocate an OrderLine to the first Batch that can allocate it.
 
     Args:
@@ -57,10 +63,15 @@ def allocate(line: OrderLine, batches: list[Batch]) -> str | None:
         batches (list[Batch]): A list of batches to allocate from.
 
     Returns:
-        Optional[str]: The reference of the batch to which the line was allocated, or None if no allocation was possible.
+        str: The reference of the batch to which the line was allocated.
+
+    Raises:
+        OutOfStock: If no batch is available to allocate the order line.
     """
     for batch in sorted(batches):
         if batch.can_allocate(line):
             batch.allocate(line)
             return batch.reference
-    return None
+    raise OutOfStock(
+        f"No batch available to allocate the order line with SKU {line.sku}."
+    )
