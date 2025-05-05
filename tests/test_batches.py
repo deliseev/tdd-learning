@@ -39,3 +39,13 @@ def test_allocating_orderline_with_zero_quantity_does_not_change_available_quant
     batch.allocate(line)
 
     assert batch.available_quantity == 20
+
+
+def test_allocation_is_idempotent():
+    batch = Batch("batch-001", "SMALL-TABLE", qty=20, eta=dt.date.today())
+    line = OrderLine("order-ref", "SMALL-TABLE", 2)
+
+    batch.allocate(line)
+    batch.allocate(line)  # Allocating the same line again
+
+    assert batch.available_quantity == 18
