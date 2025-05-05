@@ -1,4 +1,6 @@
 name: Example
+run-name: ${{ github.actor }} is testing out GitHub Actions
+on: [push]
 jobs:
   uv-example:
     name: python
