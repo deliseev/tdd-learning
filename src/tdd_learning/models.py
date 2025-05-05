@@ -11,6 +11,14 @@ class OrderLine:
 
 
 class Batch:
+    def __lt__(self, other: "Batch") -> bool:
+        """Define less-than for sorting Batches by ETA."""
+        if self.eta is None:
+            return False
+        if other.eta is None:
+            return True
+        return self.eta < other.eta
+
     def __init__(self, ref: str, sku: str, qty: int, eta: Optional[dt.date]):
         self.reference: str = ref
         self.sku: str = sku
@@ -39,3 +47,20 @@ class Batch:
         """Deallocate an OrderLine from this Batch if it is allocated."""
         if line in self._allocations:
             self._allocations.remove(line)
+
+
+def allocate(line: OrderLine, batches: list[Batch]) -> str | None:
+    """Allocate an OrderLine to the first Batch that can allocate it.
+
+    Args:
+        line (OrderLine): The order line to allocate.
+        batches (list[Batch]): A list of batches to allocate from.
+
+    Returns:
+        Optional[str]: The reference of the batch to which the line was allocated, or None if no allocation was possible.
+    """
+    for batch in sorted(batches):
+        if batch.can_allocate(line):
+            batch.allocate(line)
+            return batch.reference
+    return None
